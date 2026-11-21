@@ -2,6 +2,8 @@
 Session 5 (importing your own modules and the standard library) and Session 6 (catching only
 the errors you expect)."""
 
+from collections import Counter
+
 from errors import SignupError, UnknownEventError
 from event import Event
 
@@ -16,20 +18,64 @@ class Club:
 
     def add_event(self, title: str, capacity: int) -> Event:
         """Make a new Event, store it under its title, and return it."""
-        raise NotImplementedError("core: check capacity and title, then store and return a new Event")
-
+        if title in self.events or capacity < 1:
+            raise ValueError
+        n_event = Event(title, capacity)
+        self.events[title] = n_event
+        return n_event
+        
     def event(self, title: str) -> Event:
-        """Return the event with this title, or raise UnknownEventError."""
-        raise NotImplementedError("core: look the event up, and turn a KeyError into UnknownEventError")
+        try:
+            return self.events[title]
+        except:
+            raise UnknownEventError(title)
 
     def handle(self, line: str) -> str:
-        """Answer one chat command, such as "join, Muay Thai basics, Nino", with one sentence."""
-        raise NotImplementedError("core: answer a join or leave command, or say sorry")
+        parts = [part.strip() for part in line.split(",")]
+        
+        if len(parts) < 3 or not parts[0] in ['join', 'leave']:
+            return f'Sorry, I don\'t understand {line!r}.'
+
+        command, title, member = parts
+        
+        try:
+            event = self.event(title)
+
+            if command == "join":
+                result = event.sign_up(member)
+
+                if result == "seat":
+                    return f"{member} has a seat at {title}."
+
+                return f"{member} is on the waitlist for {title}."
+
+            old_seats = list(event.seats)
+            event.cancel(member)
+
+            promoted = [
+                person for person in event.seats
+                if person not in old_seats
+            ]
+
+            if promoted:
+                return (
+                    f"{member} left {title}. "
+                    f"{promoted[0]} gets the seat."
+                )
+
+            return f"{member} left {title}."
+
+        except SignupError as error:
+            return f"Sorry, {error}."
+        
 
     def attendance(self) -> dict[str, int]:
-        """How many events each member has a seat at. The waitlist does not count."""
-        raise NotImplementedError("core: count each member's seats over all the events")
+        counts = Counter()
 
+        for event in self.events.values():
+            counts.update(event.seats)
+
+        return dict(counts)
 
 if __name__ == "__main__":
     # Provided: a short run of the chat bot. It runs only with `python club.py`, not on import.

@@ -11,22 +11,25 @@ class NotSignedUpError(SignupError):
 
     def __init__(self, member: str, event: str):
         """Provided: give the parent the message, then keep member and event."""
-        super().__init__(f"{member} is not signed up for {event}")
         self.member = member
         self.event = event
+        super().__init__(f"{member} is not signed up for {event}")
 
 
 class AlreadySignedUpError(SignupError):
-    """The member already has a seat, or is already on the waitlist."""
-
+    # 'Nino is already signed up for Muay Thai basics'
     def __init__(self, member: str, event: str):
-        """Give the parent the message, then keep member and event for whoever catches it."""
-        raise NotImplementedError("core: AlreadySignedUpError's message, member and event")
+        self.member = member
+        self.event = event
+        
+    def __str__(self):
+        return f'{self.member} is already signed up for {self.event}'
 
 
 class UnknownEventError(SignupError):
-    """The club has no event with this title."""
-
+    # "there is no event called 'Chess night'"
     def __init__(self, title: str):
-        """Give the parent the message, then keep the title for whoever catches it."""
-        raise NotImplementedError("core: UnknownEventError's message and title")
+        self.title = title
+
+    def __str__(self):
+        return f"there is no event called '{self.title}'"
